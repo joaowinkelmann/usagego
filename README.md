@@ -1,4 +1,4 @@
-# opencode-go-usage
+# usagego
 
 Plugin do OpenCode que mostra tua cota do [OpenCode Go](https://opencode.ai/v2/docs/console/go/) na sidebar do TUI.
 
@@ -21,7 +21,7 @@ No `opencode.json(c)` global:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "opencode-go-usage@git+https://github.com/jwinkelmann/opencode-go-usage.git"
+    "usagego@git+https://github.com/jwinkelmann/usagego.git"
   ]
 }
 ```

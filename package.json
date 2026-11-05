@@ -1,5 +1,5 @@
 {
-  "name": "opencode-go-usage",
+  "name": "usagego",
   "version": "0.1.0",
   "description": "Sidebar + comando /gousage com a cota do OpenCode Go (5h/semana/mês, pace, estimativa $)",
   "type": "module",
