@@ -21,7 +21,7 @@ No `opencode.json(c)` global:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "usagego@git+https://github.com/jwinkelmann/usagego.git"
+    "usagego@git+https://github.com/joaowinkelmann/usagego.git"
   ]
 }
 ```
