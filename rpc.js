@@ -20,8 +20,20 @@ const UsagePayload = {
     monthly: Slot,
     pricingAsOf: { type: "string" },
     limits: { type: "object", additionalProperties: { type: "number" } },
+    models: {
+      type: "object",
+      additionalProperties: {
+        type: "object",
+        properties: {
+          dollars: { type: "number" },
+          requests: { type: "number" },
+        },
+        required: ["dollars", "requests"],
+        additionalProperties: false,
+      },
+    },
   },
-  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits"],
+  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits", "models"],
   additionalProperties: false,
 }
 

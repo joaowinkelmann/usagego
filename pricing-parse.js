@@ -1,5 +1,16 @@
 // Extrai {modelId: limiteMensal} da tabela do plano Go padrão na doc.
 // shortcut: parse de HTML; se a doc reestruturar, cai em fallback (tabela embutida).
+export function summarizeModels(items) {
+  const out = {}
+  for (const it of items ?? []) {
+    if (!it || typeof it.model !== "string") continue
+    out[it.model] = {
+      dollars: Math.round(Number(it.totalCostMicroCents ?? 0) / 1e6) / 100,
+      requests: Number(it.totalRequests ?? 0),
+    }
+  }
+  return out
+}
 export function parseGoPricing(html, knownIds = []) {
   const known = new Set(knownIds)
   // SSR marca os painéis: data-plan-panel="go" (padrão), "go-plus", "go-teams".

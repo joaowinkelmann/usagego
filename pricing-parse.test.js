@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { parseGoPricing } from "./pricing-parse.js"
+import { parseGoPricing, summarizeModels } from "./pricing-parse.js"
 
 const HTML = `
 <div role="tabpanel" data-plan-panel="go"><div>
@@ -29,6 +29,13 @@ test("parseia só o slot go padrão", () => {
   assert.equal(limits["minimax-m3"], 60)
   assert.ok(!("beam-free" in limits))
   assert.deepEqual(unmatched, [])
+})
+
+test("summarizeModels converte microcents em dólares", () => {
+  const out = summarizeModels([
+    { model: "muse-spark-1.3-contributor", totalCostMicroCents: "120355911", totalRequests: "1331" },
+  ])
+  assert.deepEqual(out, { "muse-spark-1.3-contributor": { dollars: 1.2, requests: 1331 } })
 })
 
 test("ignora nomes fora da tabela conhecida", () => {

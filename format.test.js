@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare } from "./format.js"
 
 test("bar usa 10 blocos", () => {
   assert.equal(bar(50), "▓▓▓▓▓░░░░░")
@@ -44,4 +44,16 @@ test("periodStart volta 1 mês / 7 dias / 5 horas", () => {
   assert.equal(periodStart("2026-12-03T04:05:42.000Z", "month"), "2026-11-03T04:05:42.000Z")
   assert.equal(periodStart("2026-11-09T00:00:00.000Z", "week"), "2026-11-02T00:00:00.000Z")
   assert.equal(periodStart("2026-11-05T18:16:02.000Z", "rolling"), "2026-11-05T13:16:02.000Z")
+})
+
+test("billingWindow usa o ciclo do allowance (dia 3)", () => {
+  assert.deepEqual(
+    billingWindow("2026-12-03T04:05:42.000Z", Date.parse("2026-11-05T14:00:00.000Z")),
+    { from: "2026-11-03", to: "2026-11-05" },
+  )
+})
+
+test("modelShare calcula % do budget do modelo", () => {
+  assert.equal(modelShare(1.2, 60), 2)
+  assert.equal(modelShare(1.2, undefined), null)
 })

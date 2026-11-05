@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { countdown, estimateDollars, resetClock, pacePercent, paceColor } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelShare } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -65,6 +65,19 @@ export default Plugin.define({
     const timer = setInterval(() => void refresh().catch(() => {}), 300_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
 
+    const modelLine = () => {
+      const s = state
+      if (!s.data) return null
+      const model = context.ui.model.current()
+      const modelID = model?.id ?? model?.modelID ?? ""
+      if (!modelID) return null
+      const m = s.data.models[modelID]
+      const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
+      if (!m || monthly === undefined) return null
+      const share = modelShare(m.dollars, monthly)
+      return `${modelID} $${m.dollars}/$${monthly} (${share}%)`
+    }
+
     context.ui.slot({
       append: "sidebar.content",
       render: () => {
@@ -74,12 +87,14 @@ export default Plugin.define({
         }
         const stale = s.stale ? " (desatualizado)" : ""
         const pace = paceLine()
+        const model = modelLine()
         return (
           <box flexDirection="column">
             <text>
               {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
             </text>
             {pace ? <text fg={pace.color ?? undefined}>{pace.label}</text> : null}
+            {model ? <text>{model}</text> : null}
           </box>
         )
       },

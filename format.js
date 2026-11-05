@@ -55,3 +55,17 @@ export function paceColor(p) {
   if (p < 50) return "#22c55e"
   return null
 }
+
+export function billingWindow(monthlyResetsAt, now = Date.now()) {
+  const startIso = periodStart(monthlyResetsAt, "month")
+  if (!startIso) return null
+  return {
+    from: startIso.slice(0, 10),
+    to: new Date(now).toISOString().slice(0, 10),
+  }
+}
+
+export function modelShare(dollars, monthly) {
+  if (monthly === undefined || monthly === null || monthly === 0) return null
+  return Math.round((dollars / monthly) * 1000) / 10
+}

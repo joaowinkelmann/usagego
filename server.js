@@ -4,13 +4,16 @@ import os from "node:os"
 import path from "node:path"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { parseGoPricing } from "./pricing-parse.js"
+import { parseGoPricing, summarizeModels } from "./pricing-parse.js"
+import { billingWindow } from "./format.js"
 
 const ENDPOINT = "https://opencode.ai/zen/go/v1/usage"
+const MODELS_URL = "https://opencode.ai/console/api/usage/models"
 const DOCS_URL = "https://opencode.ai/v2/docs/console/go/"
 const POLL_MS = 300_000
 const WEEK_MS = 7 * 24 * 3_600_000
 const KEY_FILE = path.join(os.homedir(), ".config", "opencode", ".go-api-key")
+const ORG_FILE = path.join(os.homedir(), ".config", "opencode", ".go-org-id")
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
 
 const monthlyFallback = () =>
@@ -62,13 +65,61 @@ export default Plugin.define({
       return { ok: { fetchedAt: new Date().toISOString(), rolling, weekly, monthly } }
     }
 
+    const fetchModels = async (window, signal) => {
+      const readTrimmed = (file) => {
+        try {
+          const v = readFileSync(file, "utf8").trim()
+          return v || null
+        } catch {
+          return null
+        }
+      }
+      const key = readTrimmed(KEY_FILE)
+      if (!key) return { error: "key-file-missing" }
+      const org = readTrimmed(ORG_FILE)
+      if (!org) return { error: "org-file-missing" }
+      const out = {}
+      for (let page = 1; page <= 5; page++) {
+        const url =
+          `${MODELS_URL}?range=30d&from=${window.from}&to=${window.to}` +
+          `&page=${page}&pageSize=100&costOrder=desc`
+        let res
+        try {
+          res = await fetch(url, {
+            headers: {
+              Authorization: "Bearer " + key,
+              "x-org-id": org,
+              "User-Agent": UA,
+              Accept: "application/json",
+            },
+            signal,
+          })
+        } catch (e) {
+          return { error: e && e.name === "AbortError" ? "aborted" : "models-fetch-failed" }
+        }
+        if (!res.ok) return { error: "models-http-" + res.status }
+        let body
+        try {
+          body = await res.json()
+        } catch {
+          return { error: "models-bad-json" }
+        }
+        const items = Array.isArray(body?.items) ? body.items : []
+        Object.assign(out, summarizeModels(items))
+        if (items.length < 100) break
+      }
+      return { ok: out }
+    }
+
     const withPricing = async (usage) => {
       const stored = await ctx.storage.get("pricing")
       const ok = stored && typeof stored === "object" && stored.limits && typeof stored.limits === "object"
+      const models = await ctx.storage.get("models")
       return {
         ...usage,
         pricingAsOf: ok ? stored.asOf : "built-in",
         limits: ok ? stored.limits : monthlyFallback(),
+        models: models && typeof models === "object" ? models : {},
       }
     }
 
@@ -110,6 +161,12 @@ export default Plugin.define({
         return
       }
       await ctx.storage.set("usage", fresh.ok)
+      const window = billingWindow(fresh.ok.monthly.resetsAt)
+      if (window) {
+        const models = await fetchModels(window, controller.signal)
+        if (models.ok) await ctx.storage.set("models", models.ok)
+        else if (models.error !== "aborted") console.warn("[go-usage] " + models.error)
+      }
       const payload = await withPricing(fresh.ok)
       await registration.events.emit("updated", payload)
     }
