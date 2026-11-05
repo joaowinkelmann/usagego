@@ -62,7 +62,6 @@ export default Plugin.define({
     }
 
     await refresh()
-    context.ui.toast.show({ title: "go-usage", message: "monitor carregado", variant: "success" })
     const timer = setInterval(() => void refresh().catch(() => {}), 300_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
 
