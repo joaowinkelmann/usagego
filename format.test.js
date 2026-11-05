@@ -1,0 +1,47 @@
+import test from "node:test"
+import assert from "node:assert/strict"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart } from "./format.js"
+
+test("bar usa 10 blocos", () => {
+  assert.equal(bar(50), "▓▓▓▓▓░░░░░")
+})
+
+test("countdown inválido retorna —", () => {
+  assert.equal(countdown("xxx"), "—")
+})
+
+test("estimate 8% de $60 = 4.8", () => {
+  assert.equal(estimateDollars(8, 60), 4.8)
+})
+
+test("resetClock mostra HH:MM local", () => {
+  const d = new Date("2026-11-05T18:16:02.000Z")
+  const want = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  assert.equal(resetClock("2026-11-05T18:16:02.000Z"), want)
+})
+
+test("resetClock inválido retorna —", () => {
+  assert.equal(resetClock("xxx"), "—")
+})
+
+test("pace projeta o mês (5% em 2/30 dias = 75%)", () => {
+  const p = pacePercent(5, "2026-12-03T04:05:42.000Z", "month", Date.parse("2026-11-05T04:05:42.000Z"))
+  assert.equal(p, 75)
+})
+
+test("pace inválido retorna null", () => {
+  assert.equal(pacePercent(5, "xxx", "month"), null)
+})
+
+test("paceColor segue os limiares", () => {
+  assert.equal(paceColor(49), "#22c55e")
+  assert.equal(paceColor(50), null)
+  assert.equal(paceColor(71), "#eab308")
+  assert.equal(paceColor(85), "#ef4444")
+})
+
+test("periodStart volta 1 mês / 7 dias / 5 horas", () => {
+  assert.equal(periodStart("2026-12-03T04:05:42.000Z", "month"), "2026-11-03T04:05:42.000Z")
+  assert.equal(periodStart("2026-11-09T00:00:00.000Z", "week"), "2026-11-02T00:00:00.000Z")
+  assert.equal(periodStart("2026-11-05T18:16:02.000Z", "rolling"), "2026-11-05T13:16:02.000Z")
+})

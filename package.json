@@ -1,0 +1,23 @@
+{
+  "name": "opencode-go-usage",
+  "version": "0.1.0",
+  "description": "Sidebar + comando /gousage com a cota do OpenCode Go (5h/semana/mês, pace, estimativa $)",
+  "type": "module",
+  "exports": {
+    ".": "./server.js",
+    "./tui": "./tui.tsx",
+    "./rpc": "./rpc.js"
+  },
+  "files": [
+    "server.js",
+    "tui.tsx",
+    "rpc.js",
+    "pricing.js",
+    "pricing-parse.js",
+    "format.js",
+    "README.md"
+  ],
+  "dependencies": {
+    "@opencode/plugin": "latest"
+  }
+}
