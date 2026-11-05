@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines } from "./format.js"
 
 test("bar usa 10 blocos", () => {
   assert.equal(bar(50), "▓▓▓▓▓░░░░░")
@@ -64,6 +64,14 @@ test("dayStart é meia-noite local em ISO UTC", () => {
   assert.equal(d.getHours(), 0)
   assert.equal(d.getMinutes(), 0)
   assert.equal(iso, d.toISOString())
+})
+
+test("modelLines cabe em 2 linhas curtas", () => {
+  assert.deepEqual(
+    modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }),
+    ["muse-spark... · dia $0.28", "mês $1.25/$60 (2.1%)"],
+  )
+  assert.equal(modelLines("hy3", null, 60, null), null)
 })
 
 test("shortId colapsa ids longos", () => {

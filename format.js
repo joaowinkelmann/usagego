@@ -80,3 +80,10 @@ export function dayStart(now = Date.now()) {
   d.setHours(0, 0, 0, 0)
   return d.toISOString()
 }
+
+export function modelLines(modelID, m, monthly, day) {
+  if (!modelID || !m || monthly === undefined) return null
+  const share = modelShare(m.dollars, monthly)
+  const today = day && typeof day.dollars === "number" ? day.dollars : 0
+  return [`${shortId(modelID)} · dia $${today}`, `mês $${m.dollars}/$${monthly} (${share}%)`]
+}

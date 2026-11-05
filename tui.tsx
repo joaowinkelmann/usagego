@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, shortId } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelLines } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -74,9 +74,7 @@ export default Plugin.define({
       if (!modelID) return null
       const m = s.data.models[modelID]
       const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
-      if (!m || monthly === undefined) return null
-      const day = s.data.daily[modelID]?.dollars ?? 0
-      return `${shortId(modelID)} · dia $${day} · mês $${m.dollars}/$${monthly}`
+      return modelLines(modelID, m, monthly, s.data.daily[modelID])
     }
 
     context.ui.slot({
@@ -95,7 +93,7 @@ export default Plugin.define({
               {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
             </text>
             {pace ? <text fg={pace.color ?? undefined}>{pace.label}</text> : null}
-            {model ? <text>{model}</text> : null}
+            {model ? model.map((l) => <text>{l}</text>) : null}
           </box>
         )
       },
