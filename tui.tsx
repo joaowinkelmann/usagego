@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelShare } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, shortId } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -62,6 +62,7 @@ export default Plugin.define({
     }
 
     await refresh()
+    context.ui.toast.show({ title: "go-usage", message: "monitor carregado", variant: "success" })
     const timer = setInterval(() => void refresh().catch(() => {}), 300_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
 
@@ -74,8 +75,8 @@ export default Plugin.define({
       const m = s.data.models[modelID]
       const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
       if (!m || monthly === undefined) return null
-      const share = modelShare(m.dollars, monthly)
-      return `${modelID} $${m.dollars}/$${monthly} (${share}%)`
+      const day = s.data.daily[modelID]?.dollars ?? 0
+      return `${shortId(modelID)} · dia $${day} · mês $${m.dollars}/$${monthly}`
     }
 
     context.ui.slot({
@@ -116,7 +117,8 @@ export default Plugin.define({
           slash: { name: "gousage" },
           run: async () => {
             await refresh()
-            context.ui.panel.open("go-usage.detail")
+            const opened = context.ui.panel.open("go-usage.detail")
+            if (!opened) await context.ui.dialog.alert({ title: "Uso do OpenCode Go", message: detail() })
           },
         },
       ],

@@ -69,3 +69,14 @@ export function modelShare(dollars, monthly) {
   if (monthly === undefined || monthly === null || monthly === 0) return null
   return Math.round((dollars / monthly) * 1000) / 10
 }
+
+export function shortId(modelID, keep = 10) {
+  if (!modelID || modelID.length <= keep + 4) return modelID ?? ""
+  return modelID.slice(0, keep) + "..."
+}
+
+export function dayStart(now = Date.now()) {
+  const d = new Date(now)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}

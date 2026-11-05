@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart } from "./format.js"
 
 test("bar usa 10 blocos", () => {
   assert.equal(bar(50), "▓▓▓▓▓░░░░░")
@@ -56,4 +56,18 @@ test("billingWindow usa o ciclo do allowance (dia 3)", () => {
 test("modelShare calcula % do budget do modelo", () => {
   assert.equal(modelShare(1.2, 60), 2)
   assert.equal(modelShare(1.2, undefined), null)
+})
+
+test("dayStart é meia-noite local em ISO UTC", () => {
+  const iso = dayStart(Date.parse("2026-11-05T14:00:00.000Z"))
+  const d = new Date(iso)
+  assert.equal(d.getHours(), 0)
+  assert.equal(d.getMinutes(), 0)
+  assert.equal(iso, d.toISOString())
+})
+
+test("shortId colapsa ids longos", () => {
+  assert.equal(shortId("muse-spark-1.3-contributor"), "muse-spark...")
+  assert.equal(shortId("qwen3.8-flash"), "qwen3.8-flash")
+  assert.equal(shortId("hy3"), "hy3")
 })

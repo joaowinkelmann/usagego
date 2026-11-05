@@ -32,8 +32,20 @@ const UsagePayload = {
         additionalProperties: false,
       },
     },
+    daily: {
+      type: "object",
+      additionalProperties: {
+        type: "object",
+        properties: {
+          dollars: { type: "number" },
+          requests: { type: "number" },
+        },
+        required: ["dollars", "requests"],
+        additionalProperties: false,
+      },
+    },
   },
-  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits", "models"],
+  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits", "models", "daily"],
   additionalProperties: false,
 }
 

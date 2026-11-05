@@ -5,7 +5,7 @@ import path from "node:path"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
 import { parseGoPricing, summarizeModels } from "./pricing-parse.js"
-import { billingWindow } from "./format.js"
+import { billingWindow, dayStart } from "./format.js"
 
 const ENDPOINT = "https://opencode.ai/zen/go/v1/usage"
 const MODELS_URL = "https://opencode.ai/console/api/usage/models"
@@ -80,9 +80,10 @@ export default Plugin.define({
       if (!org) return { error: "org-file-missing" }
       const out = {}
       for (let page = 1; page <= 5; page++) {
-        const url =
-          `${MODELS_URL}?range=30d&from=${window.from}&to=${window.to}` +
-          `&page=${page}&pageSize=100&costOrder=desc`
+        const q = window.since
+          ? `range=24h&since=${encodeURIComponent(window.since)}`
+          : `range=30d&from=${window.from}&to=${window.to}`
+        const url = `${MODELS_URL}?${q}&page=${page}&pageSize=100&costOrder=desc`
         let res
         try {
           res = await fetch(url, {
@@ -115,11 +116,14 @@ export default Plugin.define({
       const stored = await ctx.storage.get("pricing")
       const ok = stored && typeof stored === "object" && stored.limits && typeof stored.limits === "object"
       const models = await ctx.storage.get("models")
+      const daily = await ctx.storage.get("modelsDaily")
+      const map = (v) => (v && typeof v === "object" ? v : {})
       return {
         ...usage,
         pricingAsOf: ok ? stored.asOf : "built-in",
         limits: ok ? stored.limits : monthlyFallback(),
-        models: models && typeof models === "object" ? models : {},
+        models: map(models),
+        daily: map(daily),
       }
     }
 
@@ -163,9 +167,14 @@ export default Plugin.define({
       await ctx.storage.set("usage", fresh.ok)
       const window = billingWindow(fresh.ok.monthly.resetsAt)
       if (window) {
-        const models = await fetchModels(window, controller.signal)
+        const [models, day] = await Promise.all([
+          fetchModels(window, controller.signal),
+          fetchModels({ since: dayStart() }, controller.signal),
+        ])
         if (models.ok) await ctx.storage.set("models", models.ok)
         else if (models.error !== "aborted") console.warn("[go-usage] " + models.error)
+        if (day.ok) await ctx.storage.set("modelsDaily", day.ok)
+        else if (day.error !== "aborted") console.warn("[go-usage] " + day.error)
       }
       const payload = await withPricing(fresh.ok)
       await registration.events.emit("updated", payload)
