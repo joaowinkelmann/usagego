@@ -62,7 +62,7 @@ export default Plugin.define({
     }
 
     await refresh()
-    const timer = setInterval(() => void refresh().catch(() => {}), 300_000)
+    const timer = setInterval(() => void refresh().catch(() => {}), 180_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
 
     const modelLine = () => {
@@ -88,11 +88,16 @@ export default Plugin.define({
         const model = modelLine()
         return (
           <box flexDirection="column">
-            <text>
-              {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
-            </text>
+            <box flexDirection="row">
+              <text>{`5h (${resetClock(s.data.rolling.resetsAt)}) `}</text>
+              <text fg={paceColor(s.data.rolling.percent) ?? undefined}>{`${s.data.rolling.percent}%`}</text>
+              <text> · sem </text>
+              <text fg={paceColor(s.data.weekly.percent) ?? undefined}>{`${s.data.weekly.percent}%`}</text>
+              <text> · mês </text>
+              <text fg={paceColor(s.data.monthly.percent) ?? undefined}>{`${s.data.monthly.percent}%${stale}`}</text>
+            </box>
             {pace ? <text fg={pace.color ?? undefined}>{pace.label}</text> : null}
-            {model ? model.map((l) => <text>{l}</text>) : null}
+            {model ? model.map((l) => <text fg="#6e7681">{l}</text>) : null}
           </box>
         )
       },
@@ -116,6 +121,21 @@ export default Plugin.define({
             await refresh()
             const opened = context.ui.panel.open("go-usage.detail")
             if (!opened) await context.ui.dialog.alert({ title: "Uso do OpenCode Go", message: detail() })
+          },
+        },
+        {
+          id: "go-usage.refresh",
+          title: "Go: atualizar uso agora",
+          group: "Go",
+          palette: true,
+          run: async () => {
+            await refresh()
+            const s = state
+            context.ui.toast.show({
+              title: "go-usage",
+              message: s.data ? `atualizado · mês ${s.data.monthly.percent}%` : "falhou — rode /gousage",
+              variant: s.data ? "success" : "warning",
+            })
           },
         },
       ],

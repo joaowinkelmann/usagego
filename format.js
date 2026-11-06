@@ -27,6 +27,8 @@ export function resetClock(resetsAt) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
 }
 
+// Inícios de ciclo inferidos do resetsAt: o /zen só entrega fim do ciclo,
+// então assume mês corrido, semana de 7d e janela de 5h (nomes das janelas).
 export function periodStart(resetsAt, kind) {
   const t = Date.parse(resetsAt)
   if (Number.isNaN(t)) return null
@@ -51,12 +53,13 @@ export function pacePercent(percent, resetsAt, kind, now = Date.now()) {
 export function paceColor(p) {
   if (p == null || Number.isNaN(p)) return null
   if (p >= 85) return "#ef4444"
-  if (p > 70) return "#eab308"
-  if (p < 50) return "#22c55e"
-  return null
+  if (p >= 70) return "#eab308"
+  if (p >= 50) return "#22c55e"
+  return "#3b82f6"
 }
 
 export function billingWindow(monthlyResetsAt, now = Date.now()) {
+  // Janela inferida (fim do ciclo vem do /zen); dia de fechamento nunca é literal no código.
   const startIso = periodStart(monthlyResetsAt, "month")
   if (!startIso) return null
   return {

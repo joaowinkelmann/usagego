@@ -34,10 +34,15 @@ test("pace inválido retorna null", () => {
 })
 
 test("paceColor segue os limiares", () => {
-  assert.equal(paceColor(49), "#22c55e")
-  assert.equal(paceColor(50), null)
-  assert.equal(paceColor(71), "#eab308")
+  assert.equal(paceColor(90), "#ef4444")
   assert.equal(paceColor(85), "#ef4444")
+  assert.equal(paceColor(75), "#eab308")
+  assert.equal(paceColor(70), "#eab308")
+  assert.equal(paceColor(60), "#22c55e")
+  assert.equal(paceColor(50), "#22c55e")
+  assert.equal(paceColor(49), "#3b82f6")
+  assert.equal(paceColor(0), "#3b82f6")
+  assert.equal(paceColor(null), null)
 })
 
 test("periodStart volta 1 mês / 7 dias / 5 horas", () => {
