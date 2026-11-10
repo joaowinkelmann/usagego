@@ -74,18 +74,25 @@ test("dayStart é meia-noite local em ISO UTC", () => {
 test("modelLines cabe em 2 linhas curtas", () => {
   assert.deepEqual(
     modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "2026-12-03T04:05:42.000Z"),
-    ["muse-spark... · dia $0.28/$2 (14%)", "mês $1.25/$60 (2.1%)"],
+    ["muse-spa... · $0.28/2 14%", "mês $1.25/$60 (2.1%)"],
   )
   assert.deepEqual(
     modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "xxx"),
-    ["muse-spark... · dia $0.28", "mês $1.25/$60 (2.1%)"],
+    ["muse-spa... · dia $0.28", "mês $1.25/$60 (2.1%)"],
   )
   assert.equal(modelLines("hy3", null, 60, null), null)
+})
+
+test("modelLines cabe em 29 cols (sidebar estreita)", () => {
+  const lines = modelLines("deepseek-v4.1-flash", { dollars: 6.14, requests: 1 }, 100, { dollars: 0.14 }, "2026-12-03T04:05:42.000Z")
+  assert.ok(lines[0].length <= 29, lines[0] + " = " + lines[0].length)
 })
 
 test("shortId colapsa ids longos", () => {
   assert.equal(shortId("muse-spark-1.3-contributor"), "muse-spark...")
   assert.equal(shortId("qwen3.8-flash"), "qwen3.8-flash")
+  assert.equal(shortId("qwen3.8-max"), "qwen3.8-max")
+  assert.equal(shortId("qwen3.8-flash", 8), "qwen3.8...")
   assert.equal(shortId("hy3"), "hy3")
 })
 

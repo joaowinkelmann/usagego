@@ -7,13 +7,13 @@ Sidebar (4 linhas, sem label):
 ```
 5h (13:00) 0% · sem 12% · mês 6%
 pace 47.4% · fecha dia 3
-muse-spark... · dia $0.31/$2 (15.5%)
+muse-spa... · $0.31/2 15.5%
 mês $1.28/$60 (2.1%)
 ```
 
 - Linha 1: uso 5h (com horário do reset), semanal e mensal — cor única pela escala do % mensal (linha única, sem quebra).
 - Linha 2: pace mensal projetado + dia de fechamento da fatura.
-- Linhas 3–4: modelo atual (id colapsado) com gasto do dia vs teto diário e do mês vs limite do plano, em cinza. Teto diário = limite mensal ÷ dias do ciclo (ex. $60/30d = $2/dia p/ spark).
+- Linhas 3–4: modelo atual (id colapsado, ≤29 cols) com gasto do dia vs teto diário (`$usado/teto %`) e do mês vs limite do plano, em cinza. Teto diário = limite mensal ÷ dias do ciclo (ex. $60/30d = $2/dia p/ spark).
 - Escala de cor: azul <50%, verde 50–70%, amarelo ≥70%, vermelho ≥85%.
 - `/gousage`: painel com detalhe das 3 janelas (countdown, pace, estimativa em $ do modelo atual), teto diário do modelo atual e data da tabela de preços.
 

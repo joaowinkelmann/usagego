@@ -75,7 +75,7 @@ export function modelShare(dollars, monthly) {
 
 export function shortId(modelID, keep = 10) {
   if (!modelID || modelID.length <= keep + 4) return modelID ?? ""
-  return modelID.slice(0, keep) + "..."
+  return modelID.slice(0, keep).replace(/[-.]+$/, "") + "..."
 }
 
 export function dayStart(now = Date.now()) {
@@ -90,8 +90,10 @@ export function modelLines(modelID, m, monthly, day, resetsAt) {
   const today = day && typeof day.dollars === "number" ? day.dollars : 0
   const budget = dailyBudget(monthly, resetsAt)
   const dia =
-    budget == null ? `$${today}` : `$${today}/$${budget} (${Math.round((today / budget) * 1000) / 10}%)`
-  return [`${shortId(modelID)} · dia ${dia}`, `mês $${m.dollars}/$${monthly} (${share}%)`]
+    budget == null
+      ? `${shortId(modelID, 8)} · dia $${today}`
+      : `${shortId(modelID, 8)} · $${today}/${budget} ${Math.round((today / budget) * 1000) / 10}%`
+  return [dia, `mês $${m.dollars}/$${monthly} (${share}%)`]
 }
 
 export function daysInCycle(monthlyResetsAt) {
