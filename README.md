@@ -11,7 +11,7 @@ muse-spark... · dia $0.31
 mês $1.28/$60 (2.1%)
 ```
 
-- Linha 1: uso 5h (com horário do reset), semanal e mensal — cada % colorida pela escala abaixo.
+- Linha 1: uso 5h (com horário do reset), semanal e mensal — cor única pela escala do % mensal (linha única, sem quebra).
 - Linha 2: pace mensal projetado + dia de fechamento da fatura.
 - Linhas 3–4: modelo atual (id colapsado) com gasto do dia e do mês vs limite do plano, em cinza.
 - Escala de cor: azul <50%, verde 50–70%, amarelo ≥70%, vermelho ≥85%.

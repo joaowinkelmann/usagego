@@ -88,14 +88,9 @@ export default Plugin.define({
         const model = modelLine()
         return (
           <box flexDirection="column">
-            <box flexDirection="row">
-              <text>{`5h (${resetClock(s.data.rolling.resetsAt)}) `}</text>
-              <text fg={paceColor(s.data.rolling.percent) ?? undefined}>{`${s.data.rolling.percent}%`}</text>
-              <text> · sem </text>
-              <text fg={paceColor(s.data.weekly.percent) ?? undefined}>{`${s.data.weekly.percent}%`}</text>
-              <text> · mês </text>
-              <text fg={paceColor(s.data.monthly.percent) ?? undefined}>{`${s.data.monthly.percent}%${stale}`}</text>
-            </box>
+            <text fg={paceColor(s.data.monthly.percent) ?? undefined}>
+              {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
+            </text>
             {pace ? <text fg={pace.color ?? undefined}>{pace.label}</text> : null}
             {model ? model.map((l) => <text fg="#6e7681">{l}</text>) : null}
           </box>
