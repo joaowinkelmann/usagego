@@ -84,9 +84,25 @@ export function dayStart(now = Date.now()) {
   return d.toISOString()
 }
 
-export function modelLines(modelID, m, monthly, day) {
+export function modelLines(modelID, m, monthly, day, resetsAt) {
   if (!modelID || !m || monthly === undefined) return null
   const share = modelShare(m.dollars, monthly)
   const today = day && typeof day.dollars === "number" ? day.dollars : 0
-  return [`${shortId(modelID)} · dia $${today}`, `mês $${m.dollars}/$${monthly} (${share}%)`]
+  const budget = dailyBudget(monthly, resetsAt)
+  const dia =
+    budget == null ? `$${today}` : `$${today}/$${budget} (${Math.round((today / budget) * 1000) / 10}%)`
+  return [`${shortId(modelID)} · dia ${dia}`, `mês $${m.dollars}/$${monthly} (${share}%)`]
+}
+
+export function daysInCycle(monthlyResetsAt) {
+  const end = Date.parse(monthlyResetsAt)
+  const startIso = periodStart(monthlyResetsAt, "month")
+  if (!startIso || Number.isNaN(end)) return null
+  return Math.round((end - Date.parse(startIso)) / 86_400_000)
+}
+
+export function dailyBudget(monthly, resetsAt) {
+  const days = daysInCycle(resetsAt)
+  if (monthly === undefined || monthly === null || monthly === 0 || !days) return null
+  return Math.round((monthly / days) * 100) / 100
 }

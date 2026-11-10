@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelLines } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelLines, dailyBudget, daysInCycle } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -47,6 +47,13 @@ export default Plugin.define({
         monthly === undefined
           ? "modelo fora da tabela"
           : `~$${estimateDollars(s.data.monthly.percent, monthly)} de $${monthly} (${modelID})`
+      const day = s.data.daily[modelID]?.dollars ?? 0
+      const budget = monthly === undefined ? null : dailyBudget(monthly, s.data.monthly.resetsAt)
+      const days = daysInCycle(s.data.monthly.resetsAt)
+      const dia =
+        budget == null
+          ? `dia do modelo atual: $${day} (sem teto diário)`
+          : `dia do modelo atual: $${day} de $${budget} (${Math.round((day / budget) * 1000) / 10}%) · teto diário $${monthly}/${days}d`
       const row = (name, slot, kind) => {
         const pace = pacePercent(slot.percent, slot.resetsAt, kind)
         return `${name} ${bar(slot.percent)} ${slot.percent}% · reseta em ${countdown(slot.resetsAt)} · pace ${pace ?? "—"}%`
@@ -56,6 +63,7 @@ export default Plugin.define({
         row("sem", s.data.weekly, "week"),
         row("mês", s.data.monthly, "month"),
         `estimativa mensal p/ modelo atual: ${est}`,
+        dia,
         `tabela de preços: ${s.data.pricingAsOf}`,
         s.stale ? "(desatualizado)" : `atualizado em ${s.data.fetchedAt}`,
       ].join("\n")
@@ -73,7 +81,7 @@ export default Plugin.define({
       if (!modelID) return null
       const m = s.data.models[modelID]
       const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
-      return modelLines(modelID, m, monthly, s.data.daily[modelID])
+      return modelLines(modelID, m, monthly, s.data.daily[modelID], s.data.monthly.resetsAt)
     }
 
     context.ui.slot({

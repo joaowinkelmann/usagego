@@ -18,6 +18,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@opencode/plugin": "latest"
+    "@opencode/plugin": "latest",
+    "react": "latest"
   }
 }

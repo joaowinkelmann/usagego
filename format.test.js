@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines } from "./format.js"
+import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget } from "./format.js"
 
 test("bar usa 10 blocos", () => {
   assert.equal(bar(50), "▓▓▓▓▓░░░░░")
@@ -73,7 +73,11 @@ test("dayStart é meia-noite local em ISO UTC", () => {
 
 test("modelLines cabe em 2 linhas curtas", () => {
   assert.deepEqual(
-    modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }),
+    modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "2026-12-03T04:05:42.000Z"),
+    ["muse-spark... · dia $0.28/$2 (14%)", "mês $1.25/$60 (2.1%)"],
+  )
+  assert.deepEqual(
+    modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "xxx"),
     ["muse-spark... · dia $0.28", "mês $1.25/$60 (2.1%)"],
   )
   assert.equal(modelLines("hy3", null, 60, null), null)
@@ -83,4 +87,16 @@ test("shortId colapsa ids longos", () => {
   assert.equal(shortId("muse-spark-1.3-contributor"), "muse-spark...")
   assert.equal(shortId("qwen3.8-flash"), "qwen3.8-flash")
   assert.equal(shortId("hy3"), "hy3")
+})
+
+test("daysInCycle conta os dias do ciclo mensal", () => {
+  assert.equal(daysInCycle("2026-12-03T04:05:42.000Z"), 30)
+  assert.equal(daysInCycle("2026-03-03T00:00:00.000Z"), 28)
+  assert.equal(daysInCycle("xxx"), null)
+})
+
+test("dailyBudget divide o limite mensal pelos dias do ciclo", () => {
+  assert.equal(dailyBudget(60, "2026-12-03T04:05:42.000Z"), 2)
+  assert.equal(dailyBudget(60, "xxx"), null)
+  assert.equal(dailyBudget(undefined, "2026-12-03T04:05:42.000Z"), null)
 })
