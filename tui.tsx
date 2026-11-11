@@ -1,7 +1,8 @@
 import { Plugin } from "@opencode/plugin/tui"
+import { For } from "solid-js"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, modelLines, dailyBudget, daysInCycle } from "./format.js"
+import { resetClock, pacePercent, paceColor, modelLines } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -37,38 +38,6 @@ export default Plugin.define({
       return { label, color: paceColor(pace) }
     }
 
-    const detail = () => {
-      const s = state
-      if (!s.data) return "Sem dados. Crie ~/.config/opencode/.go-api-key (chmod 600) e rode /gousage."
-      const model = context.ui.model.current()
-      const modelID = model?.id ?? model?.modelID ?? ""
-      const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
-      const est =
-        monthly === undefined
-          ? "modelo fora da tabela"
-          : `~$${estimateDollars(s.data.monthly.percent, monthly)} de $${monthly} (${modelID})`
-      const day = s.data.daily[modelID]?.dollars ?? 0
-      const budget = monthly === undefined ? null : dailyBudget(monthly, s.data.monthly.resetsAt)
-      const days = daysInCycle(s.data.monthly.resetsAt)
-      const dia =
-        budget == null
-          ? `dia do modelo atual: $${day} (sem teto diário)`
-          : `dia do modelo atual: $${day} de $${budget} (${Math.round((day / budget) * 1000) / 10}%) · teto diário $${monthly}/${days}d`
-      const row = (name, slot, kind) => {
-        const pace = pacePercent(slot.percent, slot.resetsAt, kind)
-        return `${name} ${bar(slot.percent)} ${slot.percent}% · reseta em ${countdown(slot.resetsAt)} · pace ${pace ?? "—"}%`
-      }
-      return [
-        row("5h ", s.data.rolling, "rolling"),
-        row("sem", s.data.weekly, "week"),
-        row("mês", s.data.monthly, "month"),
-        `estimativa mensal p/ modelo atual: ${est}`,
-        dia,
-        `tabela de preços: ${s.data.pricingAsOf}`,
-        s.stale ? "(desatualizado)" : `atualizado em ${s.data.fetchedAt}`,
-      ].join("\n")
-    }
-
     await refresh()
     const timer = setInterval(() => void refresh().catch(() => {}), 180_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
@@ -88,8 +57,17 @@ export default Plugin.define({
       append: "sidebar.content",
       render: () => {
         const s = state
+        // NOTE: keep a stable <box> root and avoid raw `cond ? <el/> : null`
+        // / `.map()` children: those toggle paths hit a known OpenTUI solid
+        // reconciler crash ("remove expects a renderable child object",
+        // cf. opencode#43693 / opentui#432). <For> + an always-mounted
+        // pace <text> keep node identity stable across refreshes.
         if (!s.data) {
-          return <text>{s.reason === "key-file-missing" ? "key ausente" : "indisponível"}</text>
+          return (
+            <box flexDirection="column">
+              <text>{s.reason === "key-file-missing" ? "key ausente" : "indisponível"}</text>
+            </box>
+          )
         }
         const stale = s.stale ? " (desatualizado)" : ""
         const pace = paceLine()
@@ -99,50 +77,12 @@ export default Plugin.define({
             <text fg={paceColor(s.data.monthly.percent) ?? undefined}>
               {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
             </text>
-            {pace ? <text fg={pace.color ?? undefined}>{pace.label}</text> : null}
-            {model ? model.map((l) => <text fg="#6e7681">{l}</text>) : null}
+            <text fg={pace?.color ?? undefined}>{pace ? pace.label : ""}</text>
+            <For each={model ?? []}>{(line) => <text fg="#6e7681">{line}</text>}</For>
           </box>
         )
       },
     })
-
-    context.ui.slot({
-      append: "session.panel",
-      render: (panel) => (panel.name === "go-usage.detail" ? <text>{detail()}</text> : null),
-    })
-
-    context.keymap.layer(() => ({
-      mode: "global",
-      commands: [
-        {
-          id: "go-usage.detail",
-          title: "Uso do OpenCode Go",
-          group: "Go",
-          palette: true,
-          slash: { name: "gousage" },
-          run: async () => {
-            await refresh()
-            const opened = context.ui.panel.open("go-usage.detail")
-            if (!opened) await context.ui.dialog.alert({ title: "Uso do OpenCode Go", message: detail() })
-          },
-        },
-        {
-          id: "go-usage.refresh",
-          title: "Go: atualizar uso agora",
-          group: "Go",
-          palette: true,
-          run: async () => {
-            await refresh()
-            const s = state
-            context.ui.toast.show({
-              title: "go-usage",
-              message: s.data ? `atualizado · mês ${s.data.monthly.percent}%` : "falhou — rode /gousage",
-              variant: s.data ? "success" : "warning",
-            })
-          },
-        },
-      ],
-    }))
 
     return () => {
       clearInterval(timer)

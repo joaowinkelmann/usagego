@@ -1,18 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { bar, countdown, estimateDollars, resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget } from "./format.js"
-
-test("bar usa 10 blocos", () => {
-  assert.equal(bar(50), "▓▓▓▓▓░░░░░")
-})
-
-test("countdown inválido retorna —", () => {
-  assert.equal(countdown("xxx"), "—")
-})
-
-test("estimate 8% de $60 = 4.8", () => {
-  assert.equal(estimateDollars(8, 60), 4.8)
-})
+import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget } from "./format.js"
 
 test("resetClock mostra HH:MM local", () => {
   const d = new Date("2026-11-05T18:16:02.000Z")

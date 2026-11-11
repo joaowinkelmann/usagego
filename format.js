@@ -1,25 +1,3 @@
-export function bar(percent) {
-  const filled = Math.max(0, Math.min(10, Math.round(percent / 10)))
-  return "▓".repeat(filled) + "░".repeat(10 - filled)
-}
-
-export function countdown(resetsAt, now = Date.now()) {
-  const t = Date.parse(resetsAt)
-  if (Number.isNaN(t)) return "—"
-  let ms = t - now
-  if (ms < 0) ms = 0
-  const h = Math.floor(ms / 3_600_000)
-  const d = Math.floor(h / 24)
-  if (d > 0) return `${d}d${h % 24}h`
-  const m = Math.floor((ms % 3_600_000) / 60_000)
-  if (h > 0) return `${h}h${m}m`
-  return `${m}m`
-}
-
-export function estimateDollars(percent, monthly) {
-  return Math.round((percent / 100) * monthly * 10) / 10
-}
-
 export function resetClock(resetsAt) {
   const t = Date.parse(resetsAt)
   if (Number.isNaN(t)) return "—"

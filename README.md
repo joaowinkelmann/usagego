@@ -14,8 +14,7 @@ mês $1.28/$60 (2.1%)
 - Linha 1: uso 5h (com horário do reset), semanal e mensal — cor única pela escala do % mensal (linha única, sem quebra).
 - Linha 2: pace mensal projetado + dia de fechamento da fatura.
 - Linhas 3–4: modelo atual (id colapsado, ≤29 cols) com gasto do dia vs teto diário (`$usado/teto %`) e do mês vs limite do plano, em cinza. Teto diário = limite mensal ÷ dias do ciclo (ex. $60/30d = $2/dia p/ spark).
-- Escala de cor: azul <50%, verde 50–70%, amarelo ≥70%, vermelho ≥85%.
-- `/gousage`: painel com detalhe das 3 janelas (countdown, pace, estimativa em $ do modelo atual), teto diário do modelo atual e data da tabela de preços.
+- Escala de cor: azul <50%, verde 50–70%, amarelo ≥70%, vermelho ≥85% (só texto, sem barras).
 
 ## PC zerado: dependência do react
 
@@ -60,14 +59,12 @@ Sem a key, a sidebar mostra `key ausente` e o plugin continua carregando. Sem o 
 ## Verificar
 
 - Reinicia o TUI: a sidebar mostra as 4 linhas.
-- `/gousage`: abre o detalhe (atualiza antes de abrir).
-- Paleta (`ctrl+p`) › "Go: atualizar uso agora": força refresh com toast de confirmação.
-- `node --test *.test.js` dentro da pasta do plugin: 17/17.
+- `node --test *.test.js` dentro da pasta do plugin.
 
 ## Como funciona
 
 - `server.js` polla `GET https://opencode.ai/zen/go/v1/usage` a cada 3 min e expõe o RPC `go-usage`. Gasto por modelo vem de `/console/api/usage/models` (janela do allowance + dia atual via `range=24h&since` da meia-noite local).
-- `tui.tsx` renderiza em `sidebar.content`; atualiza a cada 3 min, no fim de cada execução e via `/gousage`.
+- `tui.tsx` renderiza em `sidebar.content`; atualiza a cada 3 min e no fim de cada execução.
 - `pricing.js` + `parseGoPricing` (em `pricing-parse.js`): a tabela de limites do plano **Go padrão** é refeita da doc toda semana (startup + intervalo de 7 dias) e guardada no storage; o embutido vale como fallback.
 - Pace = uso% × (período/decorrido); início do mês = reset − 1 mês, da semana = reset − 7 dias, da janela 5h = reset − 5h.
 - Nota: o `/zen` entrega o mensal em inteiro (ex. 4% vs 4.9% real), então o pace pode ficar ~1pp abaixo do Console.
