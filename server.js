@@ -5,7 +5,7 @@ import path from "node:path"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
 import { parseGoPricing, summarizeModels } from "./pricing-parse.js"
-import { billingWindow, dayStart } from "./format.js"
+import { billingWindow, dayStart, paceFromSamples, periodStart } from "./format.js"
 
 const ENDPOINT = "https://opencode.ai/zen/go/v1/usage"
 const MODELS_URL = "https://opencode.ai/console/api/usage/models"
@@ -117,13 +117,17 @@ export default Plugin.define({
       const ok = stored && typeof stored === "object" && stored.limits && typeof stored.limits === "object"
       const models = await ctx.storage.get("models")
       const daily = await ctx.storage.get("modelsDaily")
+      const samples = await ctx.storage.get("paceSamples")
       const map = (v) => (v && typeof v === "object" ? v : {})
+      const pace = paceFromSamples(samples, usage.monthly.resetsAt)
       return {
         ...usage,
         pricingAsOf: ok ? stored.asOf : "built-in",
         limits: ok ? stored.limits : monthlyFallback(),
         models: map(models),
         daily: map(daily),
+        paceAvg: pace ? pace.avg : null,
+        paceForecast: pace ? pace.forecast : null,
       }
     }
 
@@ -165,6 +169,13 @@ export default Plugin.define({
         return
       }
       await ctx.storage.set("usage", fresh.ok)
+      // Histórico p/ média diária estilo console ("Averaging X% a day").
+      const prev = await ctx.storage.get("paceSamples")
+      const samples = Array.isArray(prev) ? prev : []
+      samples.push({ t: Date.now(), percent: fresh.ok.monthly.percent })
+      const start = Date.parse(periodStart(fresh.ok.monthly.resetsAt, "month"))
+      const kept = (Number.isNaN(start) ? samples : samples.filter((s) => s && s.t >= start)).slice(-500)
+      await ctx.storage.set("paceSamples", kept)
       const window = billingWindow(fresh.ok.monthly.resetsAt)
       if (window) {
         const [models, day] = await Promise.all([

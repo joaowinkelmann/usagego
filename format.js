@@ -86,3 +86,28 @@ export function dailyBudget(monthly, resetsAt) {
   if (monthly === undefined || monthly === null || monthly === 0 || !days) return null
   return Math.round((monthly / days) * 100) / 100
 }
+
+// Média diária a partir do histórico amostrado (%/dia) + projeção de fechamento,
+// igual ao console ("Averaging X% a day" → forecast). Exige vão mínimo de 12h e
+// variação real (inteiro do /zen fica parado por horas); sem isso, retorna null.
+export function paceFromSamples(samples, resetsAt, now = Date.now(), minSpanH = 12) {
+  const pts = (samples ?? []).filter(
+    (s) => s && typeof s.t === "number" && typeof s.percent === "number",
+  )
+  if (pts.length < 2) return null
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  const hours = (last.t - first.t) / 3_600_000
+  if (!(hours >= minSpanH)) return null
+  if (last.percent === first.percent) return null
+  const days = hours / 24
+  const end = Date.parse(resetsAt)
+  if (Number.isNaN(end)) return null
+  const remaining = (end - now) / 86_400_000
+  if (!(remaining >= 0)) return null
+  const avg = (last.percent - first.percent) / days
+  return {
+    avg: Math.round(avg * 10) / 10,
+    forecast: Math.round((last.percent + avg * remaining) * 10) / 10,
+  }
+}

@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget } from "./format.js"
+import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget, paceFromSamples } from "./format.js"
 
 test("resetClock mostra HH:MM local", () => {
   const d = new Date("2026-11-05T18:16:02.000Z")
@@ -74,6 +74,32 @@ test("modelLines cabe em 2 linhas curtas", () => {
 test("modelLines cabe em 29 cols (sidebar estreita)", () => {
   const lines = modelLines("deepseek-v4.1-flash", { dollars: 6.14, requests: 1 }, 100, { dollars: 0.14 }, "2026-12-03T04:05:42.000Z")
   assert.ok(lines[0].length <= 29, lines[0] + " = " + lines[0].length)
+})
+
+test("paceFromSamples projeta como o console (média/dia × restante)", () => {
+  const t0 = Date.parse("2026-11-03T12:00:00.000Z")
+  const samples = [
+    { t: t0, percent: 1 },
+    { t: t0 + 8 * 86_400_000, percent: 13 },
+  ]
+  const now = t0 + 8 * 86_400_000
+  const out = paceFromSamples(samples, "2026-12-03T04:05:42.000Z", now)
+  assert.equal(out.avg, 1.5)
+  assert.ok(out.forecast >= 44 && out.forecast <= 48, "forecast=" + out.forecast)
+})
+
+test("paceFromSamples null sem histórico", () => {
+  assert.equal(paceFromSamples([], "2026-12-03T04:05:42.000Z"), null)
+  assert.equal(paceFromSamples([{ t: 1, percent: 5 }], "2026-12-03T04:05:42.000Z"), null)
+  assert.equal(paceFromSamples([{ t: 1, percent: 5 }, { t: 1, percent: 6 }], "2026-12-03T04:05:42.000Z"), null)
+})
+
+test("paceFromSamples exige 12h de vão e variação", () => {
+  const t0 = Date.parse("2026-11-03T12:00:00.000Z")
+  const h2 = [{ t: t0, percent: 1 }, { t: t0 + 2 * 3_600_000, percent: 13 }]
+  assert.equal(paceFromSamples(h2, "2026-12-03T04:05:42.000Z", t0 + 2 * 3_600_000), null)
+  const flat = [{ t: t0, percent: 13 }, { t: t0 + 20 * 3_600_000, percent: 13 }]
+  assert.equal(paceFromSamples(flat, "2026-12-03T04:05:42.000Z", t0 + 20 * 3_600_000), null)
 })
 
 test("shortId colapsa ids longos", () => {

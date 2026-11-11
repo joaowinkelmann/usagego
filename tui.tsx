@@ -30,10 +30,16 @@ export default Plugin.define({
     const paceLine = () => {
       const s = state
       if (!s.data) return null
+      const day = new Date(s.data.monthly.resetsAt).getDate()
+      const dayStr = Number.isNaN(day) ? "?" : day
+      // Com histórico: média diária amostrada (igual ao console); sem: projeção instantânea.
+      if (typeof s.data.paceForecast === "number" && typeof s.data.paceAvg === "number") {
+        const label = `pace ${s.data.paceForecast}% · +${s.data.paceAvg}%/dia · fecha dia ${dayStr}`
+        return { label, color: paceColor(s.data.paceForecast) }
+      }
       const pace = pacePercent(s.data.monthly.percent, s.data.monthly.resetsAt, "month")
       if (pace == null) return null
-      const day = new Date(s.data.monthly.resetsAt).getDate()
-      const label = `pace ${pace}% · fecha dia ${Number.isNaN(day) ? "?" : day}`
+      const label = `pace ${pace}% · fecha dia ${dayStr}`
       return { label, color: paceColor(pace) }
     }
 

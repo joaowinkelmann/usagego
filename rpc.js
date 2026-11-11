@@ -44,8 +44,10 @@ const UsagePayload = {
         additionalProperties: false,
       },
     },
+    paceAvg: { type: ["number", "null"] },
+    paceForecast: { type: ["number", "null"] },
   },
-  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits", "models", "daily"],
+  required: ["fetchedAt", "rolling", "weekly", "monthly", "pricingAsOf", "limits", "models", "daily", "paceAvg", "paceForecast"],
   additionalProperties: false,
 }
 
