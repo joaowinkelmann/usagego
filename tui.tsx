@@ -1,5 +1,4 @@
 import { Plugin } from "@opencode/plugin/tui"
-import { For } from "solid-js"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
 import { resetClock, pacePercent, paceColor, modelLines } from "./format.js"
@@ -57,28 +56,25 @@ export default Plugin.define({
       append: "sidebar.content",
       render: () => {
         const s = state
-        // NOTE: keep a stable <box> root and avoid raw `cond ? <el/> : null`
-        // / `.map()` children: those toggle paths hit a known OpenTUI solid
-        // reconciler crash ("remove expects a renderable child object",
-        // cf. opencode#43693 / opentui#432). <For> + an always-mounted
-        // pace <text> keep node identity stable across refreshes.
-        if (!s.data) {
-          return (
-            <box flexDirection="column">
-              <text>{s.reason === "key-file-missing" ? "key ausente" : "indisponível"}</text>
-            </box>
-          )
-        }
-        const stale = s.stale ? " (desatualizado)" : ""
-        const pace = paceLine()
-        const model = modelLine()
+        // NOTE: fully static tree — same 4 <text> nodes on every render,
+        // content-only updates. Any mount/unmount toggle (branch, ternary
+        // null, .map, <For>/<Show>) risks the OpenTUI solid reconciler crash
+        // "remove expects a renderable child object" (opencode#43693,
+        // opentui#432, plus dual-module-identity hazard on `solid-js`
+        // imports). No `solid-js` import by design: host owns the runtime.
+        const pace = s.data ? paceLine() : null
+        const model = s.data ? modelLine() : null
+        const line1 = !s.data
+          ? s.reason === "key-file-missing"
+            ? "key ausente"
+            : "indisponível"
+          : `5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${s.stale ? " (desatualizado)" : ""}`
         return (
           <box flexDirection="column">
-            <text fg={paceColor(s.data.monthly.percent) ?? undefined}>
-              {`5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${stale}`}
-            </text>
+            <text fg={s.data ? paceColor(s.data.monthly.percent) ?? undefined : undefined}>{line1}</text>
             <text fg={pace?.color ?? undefined}>{pace ? pace.label : ""}</text>
-            <For each={model ?? []}>{(line) => <text fg="#6e7681">{line}</text>}</For>
+            <text fg="#6e7681">{model?.[0] ?? ""}</text>
+            <text fg="#6e7681">{model?.[1] ?? ""}</text>
           </box>
         )
       },
