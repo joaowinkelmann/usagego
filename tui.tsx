@@ -72,16 +72,18 @@ export default Plugin.define({
           ? s.reason === "key-file-missing"
             ? "key ausente"
             : "indisponível"
-          : `5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${s.stale ? " (desatualizado)" : ""}`
+          : `5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%`
         const line2 = pace ? pace.label : ""
         const width = Math.max(line1.length, line2.length)
         const model = s.data ? modelLine(width) : null
+        // Stale = tudo cinza claro, sem sufixo: economiza 16 cols e sinaliza sem texto.
+        const dim = s.data && s.stale ? "#9ca3af" : null
         return (
           <box flexDirection="column">
-            <text fg={s.data ? paceColor(s.data.monthly.percent) ?? undefined : undefined}>{line1}</text>
-            <text fg={pace?.color ?? undefined}>{line2}</text>
-            <text fg="#6e7681">{model?.[0] ?? ""}</text>
-            <text fg="#6e7681">{model?.[1] ?? ""}</text>
+            <text fg={dim ?? (s.data ? paceColor(s.data.monthly.percent) ?? undefined : undefined)}>{line1}</text>
+            <text fg={dim ?? pace?.color ?? undefined}>{line2}</text>
+            <text fg={dim ?? "#6e7681"}>{model?.[0] ?? ""}</text>
+            <text fg={dim ?? "#6e7681"}>{model?.[1] ?? ""}</text>
           </box>
         )
       },
