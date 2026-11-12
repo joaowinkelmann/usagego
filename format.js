@@ -62,6 +62,14 @@ export function dayStart(now = Date.now()) {
   return d.toISOString()
 }
 
+export function shortDate(resetsAt) {
+  const t = Date.parse(resetsAt)
+  if (Number.isNaN(t)) return null
+  const d = new Date(t)
+  const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+  return `${String(d.getDate()).padStart(2, "0")}/${months[d.getMonth()]}`
+}
+
 export function modelLines(modelID, m, monthly, day, resetsAt) {
   if (!modelID || !m || monthly === undefined) return null
   const share = modelShare(m.dollars, monthly)
@@ -70,7 +78,7 @@ export function modelLines(modelID, m, monthly, day, resetsAt) {
   const dia =
     budget == null
       ? `${shortId(modelID, 8)} · dia $${today}`
-      : `${shortId(modelID, 8)} · $${today}/${budget} ${Math.round((today / budget) * 1000) / 10}%`
+      : `${shortId(modelID, 8)} · $${today}/${budget} (${Math.round(today / budget * 100)}%)`
   return [dia, `mês $${m.dollars}/$${monthly} (${share}%)`]
 }
 

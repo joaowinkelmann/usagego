@@ -1,7 +1,7 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { GoUsage } from "./rpc.js"
 import { GO_LIMITS } from "./pricing.js"
-import { resetClock, pacePercent, paceColor, modelLines } from "./format.js"
+import { resetClock, pacePercent, paceColor, modelLines, paceDaily, shortDate } from "./format.js"
 
 export default Plugin.define({
   id: "go-usage-tui",
@@ -30,16 +30,15 @@ export default Plugin.define({
     const paceLine = () => {
       const s = state
       if (!s.data) return null
-      const day = new Date(s.data.monthly.resetsAt).getDate()
-      const dayStr = Number.isNaN(day) ? "?" : day
-      // Com histórico: média diária amostrada (igual ao console); sem: projeção instantânea.
+      const until = shortDate(s.data.monthly.resetsAt) ?? "?"
+      // Média diária estilo console; sem ela, projeção instantânea.
       if (typeof s.data.paceForecast === "number" && typeof s.data.paceAvg === "number") {
-        const label = `pace ${s.data.paceForecast}% · +${s.data.paceAvg}%/dia · fecha dia ${dayStr}`
+        const label = `pace ${s.data.paceForecast}% · +${s.data.paceAvg}%/dia · até ${until}`
         return { label, color: paceColor(s.data.paceForecast) }
       }
       const pace = pacePercent(s.data.monthly.percent, s.data.monthly.resetsAt, "month")
       if (pace == null) return null
-      const label = `pace ${pace}% · fecha dia ${dayStr}`
+      const label = `pace ${pace}% · até ${until}`
       return { label, color: paceColor(pace) }
     }
 
