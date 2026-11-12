@@ -70,16 +70,28 @@ export function shortDate(resetsAt) {
   return `${String(d.getDate()).padStart(2, "0")}/${months[d.getMonth()]}`
 }
 
-export function modelLines(modelID, m, monthly, day, resetsAt) {
+export function fitId(modelID, maxLen) {
+  if (!modelID || !(maxLen > 0)) return ""
+  if (modelID.length <= maxLen) return modelID
+  return modelID.slice(0, Math.max(0, maxLen - 3)).replace(/[-.]+$/, "") + "..."
+}
+
+export function modelLines(modelID, m, monthly, day, resetsAt, width = 0) {
   if (!modelID || !m || monthly === undefined) return null
   const share = modelShare(m.dollars, monthly)
   const today = day && typeof day.dollars === "number" ? day.dollars : 0
   const budget = dailyBudget(monthly, resetsAt)
-  const dia =
-    budget == null
-      ? `${shortId(modelID, 8)} · dia $${today}`
-      : `${shortId(modelID, 8)} · $${today}/${budget} (${Math.round(today / budget * 100)}%)`
-  return [dia, `mês $${m.dollars}/$${monthly} (${share}%)`]
+  let dia
+  if (budget == null) {
+    dia = width > 0 ? `${fitId(modelID, width - 8)} · dia $${today}` : `${shortId(modelID, 8)} · dia $${today}`
+  } else {
+    const pct = Math.round(today / budget * 100)
+    const suffix = ` · $${today}/${budget} (${pct}%)`
+    dia = width > 0 ? fitId(modelID, width - suffix.length) + suffix : `${shortId(modelID, 8)}${suffix}`
+  }
+  const mes = `mês $${m.dollars}/$${monthly} (${share}%)`
+  if (width > 0) return [dia.padEnd(width), mes.padStart(width)]
+  return [dia, mes]
 }
 
 export function daysInCycle(monthlyResetsAt) {

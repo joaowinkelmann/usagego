@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget, paceDaily, shortDate } from "./format.js"
+import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget, paceDaily, shortDate, fitId } from "./format.js"
 
 test("resetClock mostra HH:MM local", () => {
   const d = new Date("2026-11-05T18:16:02.000Z")
@@ -101,6 +101,20 @@ test("shortId colapsa ids longos", () => {
   assert.equal(shortId("qwen3.8-max"), "qwen3.8-max")
   assert.equal(shortId("qwen3.8-flash", 8), "qwen3.8...")
   assert.equal(shortId("hy3"), "hy3")
+})
+
+test("fitId enche até maxLen exato", () => {
+  assert.equal(fitId("hy3", 10), "hy3")
+  assert.equal(fitId("muse-spark-1.3-contributor", 27), "muse-spark-1.3-contributor")
+  assert.equal(fitId("muse-spark-1.3-contributor", 16), "muse-spark-1...")
+  assert.ok(fitId("qwen3.8-flash", 10).length <= 10)
+})
+
+test("modelLines com width alinha as duas linhas", () => {
+  const lines = modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "2026-12-03T04:05:42.000Z", 33)
+  assert.equal(lines[0].length, 33)
+  assert.equal(lines[1].length, 33)
+  assert.ok(lines[1].endsWith("(2.1%)"))
 })
 
 test("daysInCycle conta os dias do ciclo mensal", () => {

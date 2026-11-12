@@ -46,7 +46,7 @@ export default Plugin.define({
     const timer = setInterval(() => void refresh().catch(() => {}), 180_000)
     const stopExec = context.data.on("session.execution.succeeded", () => void refresh().catch(() => {}))
 
-    const modelLine = () => {
+    const modelLine = (width) => {
       const s = state
       if (!s.data) return null
       const model = context.ui.model.current()
@@ -54,7 +54,7 @@ export default Plugin.define({
       if (!modelID) return null
       const m = s.data.models[modelID]
       const monthly = s.data.limits[modelID] ?? GO_LIMITS[modelID]?.monthly
-      return modelLines(modelID, m, monthly, s.data.daily[modelID], s.data.monthly.resetsAt)
+      return modelLines(modelID, m, monthly, s.data.daily[modelID], s.data.monthly.resetsAt, width)
     }
 
     context.ui.slot({
@@ -68,16 +68,18 @@ export default Plugin.define({
         // opentui#432, plus dual-module-identity hazard on `solid-js`
         // imports). No `solid-js` import by design: host owns the runtime.
         const pace = s.data ? paceLine() : null
-        const model = s.data ? modelLine() : null
         const line1 = !s.data
           ? s.reason === "key-file-missing"
             ? "key ausente"
             : "indisponível"
           : `5h (${resetClock(s.data.rolling.resetsAt)}) ${s.data.rolling.percent}% · sem ${s.data.weekly.percent}% · mês ${s.data.monthly.percent}%${s.stale ? " (desatualizado)" : ""}`
+        const line2 = pace ? pace.label : ""
+        const width = Math.max(line1.length, line2.length)
+        const model = s.data ? modelLine(width) : null
         return (
           <box flexDirection="column">
             <text fg={s.data ? paceColor(s.data.monthly.percent) ?? undefined : undefined}>{line1}</text>
-            <text fg={pace?.color ?? undefined}>{pace ? pace.label : ""}</text>
+            <text fg={pace?.color ?? undefined}>{line2}</text>
             <text fg="#6e7681">{model?.[0] ?? ""}</text>
             <text fg="#6e7681">{model?.[1] ?? ""}</text>
           </box>
