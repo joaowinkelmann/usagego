@@ -78,19 +78,22 @@ export function fitId(modelID, maxLen) {
 
 export function modelLines(modelID, m, monthly, day, resetsAt, width = 0) {
   if (!modelID || !m || monthly === undefined) return null
+  // Teto: a régua vem das linhas de cima, mas a sidebar pode ser mais estreita
+  // (painel de sessão aberto). Sem teto, a linha do modelo estoura e sangra.
+  const w = width > 29 ? 29 : width
   const share = modelShare(m.dollars, monthly)
   const today = day && typeof day.dollars === "number" ? day.dollars : 0
   const budget = dailyBudget(monthly, resetsAt)
   let dia
   if (budget == null) {
-    dia = width > 0 ? `${fitId(modelID, width - 8)} · dia $${today}` : `${shortId(modelID, 8)} · dia $${today}`
+    dia = w > 0 ? `${fitId(modelID, w - 8)} · dia $${today}` : `${shortId(modelID, 8)} · dia $${today}`
   } else {
     const pct = Math.round(today / budget * 100)
     const suffix = ` · $${today}/${budget} (${pct}%)`
-    dia = width > 0 ? fitId(modelID, width - suffix.length) + suffix : `${shortId(modelID, 8)}${suffix}`
+    dia = w > 0 ? fitId(modelID, w - suffix.length) + suffix : `${shortId(modelID, 8)}${suffix}`
   }
   const mes = `mês $${m.dollars}/$${monthly} (${share}%)`
-  if (width > 0) return [dia.padEnd(width), mes.padStart(width)]
+  if (w > 0) return [dia.padEnd(w), mes.padStart(w)]
   return [dia, mes]
 }
 

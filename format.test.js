@@ -110,11 +110,18 @@ test("fitId enche até maxLen exato", () => {
   assert.ok(fitId("qwen3.8-flash", 10).length <= 10)
 })
 
-test("modelLines com width alinha as duas linhas", () => {
+test("modelLines com width alinha as duas linhas (teto 29)", () => {
   const lines = modelLines("muse-spark-1.3-contributor", { dollars: 1.25, requests: 1317 }, 60, { dollars: 0.28, requests: 301 }, "2026-12-03T04:05:42.000Z", 33)
-  assert.equal(lines[0].length, 33)
-  assert.equal(lines[1].length, 33)
+  assert.equal(lines[0].length, 29)
+  assert.equal(lines[1].length, 29)
   assert.ok(lines[1].endsWith("(2.1%)"))
+})
+
+test("modelLines nunca passa de 29 cols (teto anti-sangria)", () => {
+  const lines = modelLines("muse-spark-1.3-contributor", { dollars: 6.63, requests: 1 }, 60, { dollars: 0.12, requests: 1 }, "2026-12-03T04:05:42.000Z", 41)
+  assert.ok(lines[0].length <= 29, lines[0] + " = " + lines[0].length)
+  assert.ok(lines[1].length <= 29, lines[1] + " = " + lines[1].length)
+  assert.ok(lines[1].endsWith("(11.1%)"))
 })
 
 test("daysInCycle conta os dias do ciclo mensal", () => {
