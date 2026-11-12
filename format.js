@@ -87,27 +87,17 @@ export function dailyBudget(monthly, resetsAt) {
   return Math.round((monthly / days) * 100) / 100
 }
 
-// Média diária a partir do histórico amostrado (%/dia) + projeção de fechamento,
-// igual ao console ("Averaging X% a day" → forecast). Exige vão mínimo de 12h e
-// variação real (inteiro do /zen fica parado por horas); sem isso, retorna null.
-export function paceFromSamples(samples, resetsAt, now = Date.now(), minSpanH = 12) {
-  const pts = (samples ?? []).filter(
-    (s) => s && typeof s.t === "number" && typeof s.percent === "number",
-  )
-  if (pts.length < 2) return null
-  const first = pts[0]
-  const last = pts[pts.length - 1]
-  const hours = (last.t - first.t) / 3_600_000
-  if (!(hours >= minSpanH)) return null
-  if (last.percent === first.percent) return null
-  const days = hours / 24
+// Média diária + projeção iguais às do console: atual/decorrido e média × ciclo.
+// Sem histórico amostrado (o ciclo começa ~0%, então atual/decorrido basta).
+export function paceDaily(percent, resetsAt, kind = "month", now = Date.now()) {
+  const startIso = periodStart(resetsAt, kind)
   const end = Date.parse(resetsAt)
-  if (Number.isNaN(end)) return null
-  const remaining = (end - now) / 86_400_000
-  if (!(remaining >= 0)) return null
-  const avg = (last.percent - first.percent) / days
+  if (!startIso || Number.isNaN(end)) return null
+  const elapsed = (now - Date.parse(startIso)) / 86_400_000
+  const total = (end - Date.parse(startIso)) / 86_400_000
+  if (!(elapsed >= 0.5) || !(total > 0)) return null
   return {
-    avg: Math.round(avg * 10) / 10,
-    forecast: Math.round((last.percent + avg * remaining) * 10) / 10,
+    avg: Math.round((percent / elapsed) * 10) / 10,
+    forecast: Math.round(((percent / elapsed) * total) * 10) / 10,
   }
 }
