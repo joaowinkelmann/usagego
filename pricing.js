@@ -1,5 +1,5 @@
 // Limites mensais do plano Go (USD de allowance) por model ID.
-// Fonte: https://opencode.ai/v2/docs/console/go/ — plano "go".
+// Fonte: https://opencode.ai/docs/console/go/ — plano "go".
 // shortcut: tabela vendored; revisar quando a doc mudar ou plano do usuário mudar.
 export const PLAN = "go"
 

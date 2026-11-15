@@ -1,6 +1,6 @@
 # usagego
 
-Plugin do OpenCode que mostra tua cota do [OpenCode Go](https://opencode.ai/v2/docs/console/go/) na sidebar do TUI.
+Plugin do OpenCode que mostra tua cota do [OpenCode Go](https://opencode.ai/docs/console/go/) na sidebar do TUI.
 
 Sidebar (4 linhas, sem label):
 

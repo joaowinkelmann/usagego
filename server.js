@@ -10,7 +10,7 @@ import { billingWindow, dayStart, paceDaily, exactPercent, allowanceDrift } from
 const ENDPOINT = "https://opencode.ai/zen/go/v1/usage"
 const MODELS_URL = "https://opencode.ai/console/api/usage/models"
 const ACTIVITY_URL = "https://opencode.ai/console/api/activity/go"
-const DOCS_URL = "https://opencode.ai/v2/docs/console/go/"
+const DOCS_URL = "https://opencode.ai/docs/console/go/"
 const POLL_MS = 180_000
 const WEEK_MS = 7 * 24 * 3_600_000
 const KEY_FILE = path.join(os.homedir(), ".config", "opencode", ".go-api-key")

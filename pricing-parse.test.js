@@ -9,6 +9,8 @@ const HTML = `
 <tbody>
 <tr><td>Muse Spark 1.3 Contributor</td><td>$0.10</td><td>$0.20</td><td>$0.002</td><td>-</td><td><strong>$60</strong></td></tr>
 <tr><td>MiniMax M3 (≤ 512K tokens)</td><td>$0.30</td><td>$1.20</td><td>$0.06</td><td>-</td><td><strong>$60</strong></td></tr>
+<tr><td>DeepSeek V4.1 Flash (Off-Peak)</td><td>$0.15</td><td>$0.60</td><td>$0.003</td><td>-</td><td><strong>$100</strong></td></tr>
+<tr><td>DeepSeek V4.1 Flash (Peak)</td><td>$0.30</td><td>$1.20</td><td>$0.006</td><td>-</td><td><strong>$100</strong></td></tr>
 <tr><td>Beam Free</td><td>Free</td><td>Free</td><td>Free</td><td>-</td><td><strong>Unlimited</strong></td></tr>
 </tbody>
 </table>
@@ -28,7 +30,7 @@ test("parseia só o slot go padrão", () => {
   assert.equal(limits["muse-spark-1.3-contributor"], 60)
   assert.equal(limits["minimax-m3"], 60)
   assert.ok(!("beam-free" in limits))
-  assert.deepEqual(unmatched, [])
+  assert.deepEqual(unmatched, ["DeepSeek V4.1 Flash (Off-Peak)", "DeepSeek V4.1 Flash (Peak)"])
 })
 
 test("summarizeModels converte microcents em dólares", () => {
@@ -38,8 +40,18 @@ test("summarizeModels converte microcents em dólares", () => {
   assert.deepEqual(out, { "muse-spark-1.3-contributor": { dollars: 1.2, requests: 1331 } })
 })
 
+test("variantes Peak/Off-Peak colapsam no mesmo id (primeiro vence)", () => {
+  const { limits, unmatched } = parseGoPricing(HTML, ["deepseek-v4.1-flash"])
+  assert.equal(limits["deepseek-v4.1-flash"], 100)
+  assert.deepEqual(unmatched, ["Muse Spark 1.3 Contributor", "MiniMax M3 (≤ 512K tokens)"])
+})
+
 test("ignora nomes fora da tabela conhecida", () => {
   const { limits, unmatched } = parseGoPricing(HTML, ["minimax-m3"])
   assert.equal(limits["muse-spark-1.3-contributor"], 60)
-  assert.deepEqual(unmatched, ["Muse Spark 1.3 Contributor"])
+  assert.deepEqual(unmatched, [
+    "Muse Spark 1.3 Contributor",
+    "DeepSeek V4.1 Flash (Off-Peak)",
+    "DeepSeek V4.1 Flash (Peak)",
+  ])
 })
