@@ -52,7 +52,7 @@ const UsagePayload = {
 }
 
 export const GoUsage = Rpc.define({
-  id: "go-usage",
+  id: "usagego",
   methods: {
     get: {
       input: { type: "object", additionalProperties: false },

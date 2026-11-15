@@ -62,6 +62,16 @@ export function dayStart(now = Date.now()) {
   return d.toISOString()
 }
 
+// % fracionário a partir da série diária exata (/console/api/activity/go).
+export function exactPercent(totalCostMicroCents, allowanceUsd) {
+  return Number(totalCostMicroCents) / 1e8 / allowanceUsd * 100
+}
+
+// true se a allowance ajustada divergiu do /zen além do arredondamento.
+export function allowanceDrift(totalCostMicroCents, zenPercent, allowanceUsd) {
+  return Math.abs(exactPercent(totalCostMicroCents, allowanceUsd) - zenPercent) > 2
+}
+// Data curta DD/MMM para o "até" do pace.
 export function shortDate(resetsAt) {
   const t = Date.parse(resetsAt)
   if (Number.isNaN(t)) return null

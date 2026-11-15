@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget, paceDaily, shortDate, fitId } from "./format.js"
+import { resetClock, pacePercent, paceColor, periodStart, billingWindow, modelShare, shortId, dayStart, modelLines, daysInCycle, dailyBudget, paceDaily, shortDate, fitId, exactPercent, allowanceDrift } from "./format.js"
 
 test("resetClock mostra HH:MM local", () => {
   const d = new Date("2026-11-05T18:16:02.000Z")
@@ -93,6 +93,16 @@ test("paceDaily replica o console (atual/decorrido)", () => {
 test("paceDaily null no início do ciclo", () => {
   assert.equal(paceDaily(1, "2026-12-03T04:05:42.000Z", "month", Date.parse("2026-11-03T05:00:00.000Z")), null)
   assert.equal(paceDaily(5, "xxx", "month"), null)
+})
+
+test("exactPercent converte microcents em % da allowance", () => {
+  assert.equal(exactPercent(1074000000, 70), 1074000000 / 1e8 / 70 * 100)
+  assert.equal(exactPercent(0, 70), 0)
+})
+
+test("allowanceDrift tolera o arredondamento do /zen", () => {
+  assert.equal(allowanceDrift(1074000000, 15, 70), false)
+  assert.equal(allowanceDrift(1074000000, 20, 70), true)
 })
 
 test("shortId colapsa ids longos", () => {

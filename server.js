@@ -3,12 +3,13 @@ import { readFileSync } from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { GoUsage } from "./rpc.js"
-import { GO_LIMITS } from "./pricing.js"
+import { GO_LIMITS, GO_ALLOWANCE_USD } from "./pricing.js"
 import { parseGoPricing, summarizeModels } from "./pricing-parse.js"
-import { billingWindow, dayStart, paceDaily } from "./format.js"
+import { billingWindow, dayStart, paceDaily, exactPercent, allowanceDrift } from "./format.js"
 
 const ENDPOINT = "https://opencode.ai/zen/go/v1/usage"
 const MODELS_URL = "https://opencode.ai/console/api/usage/models"
+const ACTIVITY_URL = "https://opencode.ai/console/api/activity/go"
 const DOCS_URL = "https://opencode.ai/v2/docs/console/go/"
 const POLL_MS = 180_000
 const WEEK_MS = 7 * 24 * 3_600_000
@@ -27,7 +28,7 @@ function slotOf(raw) {
 }
 
 export default Plugin.define({
-  id: "go-usage",
+  id: "usagego",
   async setup(ctx) {
     const readKey = () => {
       try {
@@ -112,13 +113,68 @@ export default Plugin.define({
       return { ok: out }
     }
 
+    // Série diária exata (dispensa cookie: personal key + x-org-id bastam).
+    const fetchActivity = async (signal) => {
+      const readTrimmed = (file) => {
+        try {
+          const v = readFileSync(file, "utf8").trim()
+          return v || null
+        } catch {
+          return null
+        }
+      }
+      const key = readTrimmed(KEY_FILE)
+      if (!key) return { error: "key-file-missing" }
+      const org = readTrimmed(ORG_FILE)
+      if (!org) return { error: "org-file-missing" }
+      let res
+      try {
+        res = await fetch(ACTIVITY_URL, {
+          headers: {
+            Authorization: "Bearer " + key,
+            "x-org-id": org,
+            "User-Agent": UA,
+            Accept: "application/json",
+          },
+          signal,
+        })
+      } catch (e) {
+        return { error: e && e.name === "AbortError" ? "aborted" : "activity-fetch-failed" }
+      }
+      if (!res.ok) return { error: "activity-http-" + res.status }
+      let body
+      try {
+        body = await res.json()
+      } catch {
+        return { error: "activity-bad-json" }
+      }
+      const daily = Array.isArray(body?.daily) ? body.daily : []
+      if (!daily.length) return { error: "activity-empty" }
+      const total = daily.reduce((a, d) => a + Number(d.totalCostMicroCents ?? 0), 0)
+      return { ok: { total } }
+    }
+
     const withPricing = async (usage) => {
       const stored = await ctx.storage.get("pricing")
       const ok = stored && typeof stored === "object" && stored.limits && typeof stored.limits === "object"
       const models = await ctx.storage.get("models")
       const daily = await ctx.storage.get("modelsDaily")
       const map = (v) => (v && typeof v === "object" ? v : {})
-      const pace = paceDaily(usage.monthly.percent, usage.monthly.resetsAt)
+      const seriesTotal = await ctx.storage.get("seriesTotal")
+      // % fracionário da série exata; fora da tolerância, volta ao inteiro do /zen.
+      let pct = usage.monthly.percent
+      if (typeof seriesTotal === "number") {
+        if (allowanceDrift(seriesTotal, usage.monthly.percent, GO_ALLOWANCE_USD)) {
+          console.warn(
+            "[usagego] allowance drift: série dá " +
+              exactPercent(seriesTotal, GO_ALLOWANCE_USD).toFixed(1) +
+              "% vs zen " + usage.monthly.percent + "%",
+          )
+        } else {
+          pct = exactPercent(seriesTotal, GO_ALLOWANCE_USD)
+        }
+      }
+      const pace = paceDaily(pct, usage.monthly.resetsAt)
       return {
         ...usage,
         pricingAsOf: ok ? stored.asOf : "built-in",
@@ -154,7 +210,7 @@ export default Plugin.define({
       const html = await res.text()
       const { limits, unmatched } = parseGoPricing(html, Object.keys(GO_LIMITS))
       if (Object.keys(limits).length === 0) throw new Error("docs-parse-empty")
-      if (unmatched.length > 0) console.warn("[go-usage] modelos novos na doc: " + unmatched.join(", "))
+      if (unmatched.length > 0) console.warn("[usagego] modelos novos na doc: " + unmatched.join(", "))
       await ctx.storage.set("pricing", { asOf: new Date().toISOString().slice(0, 10), limits })
     }
 
@@ -163,7 +219,7 @@ export default Plugin.define({
       const fresh = await fetchUsage(controller.signal)
       if (fresh.error) {
         if (fresh.error !== "key-file-missing" && fresh.error !== "aborted") {
-          console.warn("[go-usage] " + fresh.error)
+          console.warn("[usagego] " + fresh.error)
         }
         return
       }
@@ -175,16 +231,19 @@ export default Plugin.define({
           fetchModels({ since: dayStart() }, controller.signal),
         ])
         if (models.ok) await ctx.storage.set("models", models.ok)
-        else if (models.error !== "aborted") console.warn("[go-usage] " + models.error)
+        else if (models.error !== "aborted") console.warn("[usagego] " + models.error)
         if (day.ok) await ctx.storage.set("modelsDaily", day.ok)
-        else if (day.error !== "aborted") console.warn("[go-usage] " + day.error)
+        else if (day.error !== "aborted") console.warn("[usagego] " + day.error)
       }
+      const series = await fetchActivity(controller.signal)
+      if (series.ok) await ctx.storage.set("seriesTotal", series.ok.total)
+      else if (series.error !== "aborted") console.warn("[usagego] " + series.error)
       const payload = await withPricing(fresh.ok)
       await registration.events.emit("updated", payload)
     }
     const usageTimer = setInterval(() => void poll().catch(() => {}), POLL_MS)
     const pricingTimer = setInterval(
-      () => void refreshPricing(controller.signal).catch((e) => console.warn("[go-usage] pricing: " + e.message)),
+      () => void refreshPricing(controller.signal).catch((e) => console.warn("[usagego] pricing: " + e.message)),
       WEEK_MS,
     )
     void (async () => {
@@ -192,7 +251,7 @@ export default Plugin.define({
         const stored = await ctx.storage.get("pricing")
         if (!stored || Date.now() - Date.parse(stored.asOf) > WEEK_MS) await refreshPricing(controller.signal)
       } catch (e) {
-        console.warn("[go-usage] pricing: " + e.message)
+        console.warn("[usagego] pricing: " + e.message)
       }
     })()
     void poll().catch(() => {})

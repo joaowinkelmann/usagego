@@ -4,7 +4,7 @@ import { GO_LIMITS } from "./pricing.js"
 import { resetClock, pacePercent, paceColor, modelLines, paceDaily, shortDate } from "./format.js"
 
 export default Plugin.define({
-  id: "go-usage-tui",
+  id: "usagego-tui",
   async setup(context) {
     const [state, update] = context.storage.store("usage", {
       initial: { data: null, stale: false, reason: null },

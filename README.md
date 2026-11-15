@@ -63,11 +63,12 @@ Sem a key, a sidebar mostra `key ausente` e o plugin continua carregando. Sem o 
 
 ## Como funciona
 
-- `server.js` polla `GET https://opencode.ai/zen/go/v1/usage` a cada 3 min e expõe o RPC `go-usage`. Gasto por modelo vem de `/console/api/usage/models` (janela do allowance + dia atual via `range=24h&since` da meia-noite local).
+- `server.js` polla `GET https://opencode.ai/zen/go/v1/usage` a cada 3 min e expõe o RPC `usagego`. Gasto por modelo vem de `/console/api/usage/models` (janela do allowance + dia atual via `range=24h&since` da meia-noite local).
+- Série diária exata via `/console/api/activity/go` (funciona com personal key + `x-org-id`, sem cookie): o % mensal fracionário = custo acumulado ÷ allowance ($70, ajustada da série — ver `GO_ALLOWANCE_USD`); drift >2pp vs `/zen` volta ao inteiro com warn no log.
 - `tui.tsx` renderiza em `sidebar.content`; atualiza a cada 3 min e no fim de cada execução.
 - `pricing.js` + `parseGoPricing` (em `pricing-parse.js`): a tabela de limites do plano **Go padrão** é refeita da doc toda semana (startup + intervalo de 7 dias) e guardada no storage; o embutido vale como fallback.
 - Pace = uso% × (período/decorrido); início do mês = reset − 1 mês, da semana = reset − 7 dias, da janela 5h = reset − 5h.
-- Média diária amostrada: o server guarda `{t, percent}` mensal a cada poll; com ≥12h de vão e variação real, o pace usa média/dia × restante (igual ao "Averaging X% a day" do console); antes disso, cai na projeção instantânea.
+- Média diária estilo console: `paceDaily` = atual/decorrido (avg %/dia + forecast).
 - Nota: o `/zen` entrega o mensal em inteiro (ex. 4% vs 4.9% real), então o pace pode ficar ~1pp abaixo do Console.
 
 ## Premissas auditadas (nada chumbado por conta)

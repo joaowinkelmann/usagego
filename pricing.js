@@ -3,6 +3,13 @@
 // shortcut: tabela vendored; revisar quando a doc mudar ou plano do usuário mudar.
 export const PLAN = "go"
 
+// Allowance mensal total em USD, AJUSTADA da série exata (/console/api/activity/go):
+// custo acumulado ÷ % fracionária do console ≈ $70 (cruza com forecast 39.4 e
+// média 1.3%/dia de 14/Nov/2026;inteiros do /zen de 11–14/Nov também batem).
+// shortcut: nenhum endpoint expõe a allowance; o server monitora drift vs /zen
+// e volta ao inteiro do /zen se divergir.
+export const GO_ALLOWANCE_USD = 70
+
 export const GO_LIMITS = {
   "glm-5.3-flash": { monthly: 60 },
   "glm-5.3": { monthly: 15 },
